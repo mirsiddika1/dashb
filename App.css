@@ -1,0 +1,46 @@
+.select-cls {
+    border: 'none'
+}
+.MuiOutlinedInput-notchedOutline {
+    border: 0 !important;
+}
+.bottom-sec {
+    height: 60px;
+    display: flex;
+    align-items: center;
+    margin: 10px;
+    /* position: absolute; */
+    /* bottom: 0; */
+    /* width: 100%; */
+    background-color: #f4f4f4;
+    margin-top: 20px;
+}
+.bottom-title {
+    font-size: 14px;
+}
+.bottom-select {
+    padding: 10px 0 5px;
+    margin: 0 7px;
+    font-size: 14px !important;
+}
+.drawer-paper {
+    background-color: #f4f4f4 !important;
+    box-shadow: none !important;
+}
+
+.MuiModal-root {
+    bottom: unset !important;
+}
+
+@media screen and (max-width: 420px) {
+    .bottom-title {
+        font-size: 12px;
+    }
+    .bottom-select {
+        padding: 10px 0 5px;
+        font-size: 12px !important;
+    }
+    .bottom-sec {
+        height: 35px;
+    }
+}
