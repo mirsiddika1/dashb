@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { Link, Switch, BrowserRouter as Router, Route, useHistory } from 'react-router-dom'
 import { useState, useEffect } from 'react';
+import { useLocation } from "react-router-dom";
 import Dashboard from './components/Dashboard/Dashboard';
 import Header from './components/Header/Header';
 // import MenuItem from '@mui/material/MenuItem';
@@ -13,46 +14,23 @@ import Login from './components/Login/Login';
 import { DashboardAction } from './store/reducer';
 import { Menu, MenuItem } from "@material-ui/core";
 import NestedMenuItem from "material-ui-nested-menu-item";
+import {
+  ApolloClient,
+  InMemoryCache,
+  ApolloProvider,
+  useQuery,
+  gql
+} from "@apollo/client";
 
 // -------------------------------------------------------------------------------------------------------------------------------
-//Global Summart Import
-import GlobalSummaryComponent from 'components/GlobalSummary/Global_Sum';
-//United States Summary Import
-import UnitedStatesSummaryComponent from 'components/GlobalSummary/UnitedStatesSummary/US_Sum';
-
-// -------------------------------------------------------------------------------------------------------------------------------
-//US:4050 Factory Summary Import
-import Factory4050SummaryComponent from 'components/GlobalSummary/UnitedStatesSummary/F4050Summary/Factory4050_Sum';
-
-//US:4050 Factory L10 Imports
-import Factory4050L10ServerComponent from 'components/GlobalSummary/UnitedStatesSummary/F4050Summary/F4050_L10Sum/F4050_L10Server';
-import Factory4050L10RackComponent from 'components/GlobalSummary/UnitedStatesSummary/F4050Summary/F4050_L10Sum/F4050_L10Rack';
-import Factory4050L10RowComponent from 'components/GlobalSummary/UnitedStatesSummary/F4050Summary/F4050_L10Sum/F4050_L10Row';
-import Factory4050L10SummaryComponent from 'components/GlobalSummary/UnitedStatesSummary/F4050Summary/F4050_L10Sum/F4050_L10Summary';
-
-//US:4050 Factory L11 Imports
-import Factory4050L11ServerComponent from 'components/GlobalSummary/UnitedStatesSummary/F4050Summary/F4050_L11Sum/F4050_L11Server';
-import Factory4050L11RackComponent from 'components/GlobalSummary/UnitedStatesSummary/F4050Summary/F4050_L11Sum/F4050_L11Rack';
-import Factory4050L11RowComponent from 'components/GlobalSummary/UnitedStatesSummary/F4050Summary/F4050_L11Sum/F4050_L11Row';
-import Factory4050L11SummaryComponent from 'components/GlobalSummary/UnitedStatesSummary/F4050Summary/F4050_L11Sum/F4050_L11Summary';
-
-// ---------------------------------------------------------------------------------------------------------------------------------
-//US:350 Factory Summary Import
-import Factory350SummaryComponent from 'components/GlobalSummary/UnitedStatesSummary/F350Summary/Factory350_Sum';
-
-//US:350 Factory L10 Imports
-import Factory350L10ServerComponent from 'components/GlobalSummary/UnitedStatesSummary/F350Summary/F350_L10Sum/F350_L10Server';
-import Factory350L10RackComponent from 'components/GlobalSummary/UnitedStatesSummary/F350Summary/F350_L10Sum/F350_L10Rack';
-import Factory350L10RowComponent from 'components/GlobalSummary/UnitedStatesSummary/F350Summary/F350_L10Sum/F350_L10Row';
-import Factory350L10SummaryComponent from 'components/GlobalSummary/UnitedStatesSummary/F350Summary/F350_L10Sum/F350_L10Summary';
-
-//US:350 Factory L11 Imports
-import Factory350L11ServerComponent from 'components/GlobalSummary/UnitedStatesSummary/F350Summary/F350_L11Sum/F350_L11Server';
-import Factory350L11RackComponent from 'components/GlobalSummary/UnitedStatesSummary/F350Summary/F350_L11Sum/F350_L11Rack';
-import Factory350L11RowComponent from 'components/GlobalSummary/UnitedStatesSummary/F350Summary/F350_L11Sum/F350_L11Row';
-import Factory350L11SummaryComponent from 'components/GlobalSummary/UnitedStatesSummary/F350Summary/F350_L11Sum/F350_L11Summary';
-
-
+//Global Summary Import
+import GlobalSummaryComponent from './components/GlobalSummary/GlobalSummary';
+//Country Summary Import
+import CountrySummaryComponent from './components/GlobalSummary/CountrySummary/CountrySummary';
+//Factory Summary Import
+import FactorySummaryComponent from './components/GlobalSummary/CountrySummary/FactorySummary/FactorySummary';
+//Level Summary Import
+import LevelSummaryComponent from './components/GlobalSummary/CountrySummary/FactorySummary/LevelSummary/LevelSummary';
 
 const sectionTitle: any = {
   "server": "Intelligent Factory Dashboard",
@@ -76,7 +54,7 @@ const sourceData = [
     indexVal: 'm12345',
     repairStatus: 'Yes',
     row: 'A',
-    slotNumber: '30',
+    slotNumber: '1',
     bladeNumber: '1',
     position: '2',
     publishedBy: '2021-12-11',
@@ -84,7 +62,7 @@ const sourceData = [
     serverN: '20724093438',
     label: '//Storage',
     currentTest: 'Current IP: 127.0.0.1',
-    location: 'Row A, Slot 30, Blade 1, Position 2',
+    location: 'Row A, Slot 1, Blade 1, Position 2',
     test: 'MDaas',
     operator: 'Matt S',
     status: 'pass',
@@ -96,7 +74,6 @@ const sourceData = [
     rackColor: '#43E955',
     filledStatus: "Empty",
     timeRange: 2,
-    server: "6",
     mserial: "M34249",
     type: 'single',
     opacity: 1,
@@ -120,7 +97,7 @@ const sourceData = [
     location: 'Row A, Slot 30, Blade 2, Position 2',
     test: 'FinalZCONFORM',
     operator: 'Devit',
-    status: 'fail',
+    status: 'running',
     indicator: 'off',
     isRepair: true,
     highlight: false,
@@ -129,7 +106,6 @@ const sourceData = [
     rackColor: '#33D8D4',
     filledStatus: "Empty",
     timeRange: 1,
-    server: "6",
     mserial: "M34248",
     type: 'single',
     opacity: 1,
@@ -143,14 +119,14 @@ const sourceData = [
     indexVal: 'm44456',
     repairStatus: 'Yes',
     row: 'A',
-    slotNumber: '32',
+    slotNumber: '3',
     bladeNumber: '3',
     position: '1',
     publishedBy: '2021-12-11',
     ssCode: 'SS-AMZ012-1234',
     serverN: '20726093448',
     currentTest: 'Current IP: 127.0.0.1',
-    location: 'Row A, Slot 32, Blade 3, Position 1',
+    location: 'Row A, Slot 3, Blade 3, Position 1',
     test: 'FinalZCONFORM',
     operator: 'Matt S',
     status: 'running',
@@ -163,12 +139,45 @@ const sourceData = [
     rackColor: '#33D8D4',
     filledStatus: "Empty",
     timeRange: 12,
-    server: "5",
     mserial: "M34249",
     type: 'single',
     opacity: 1,
     section: "UTILITY",
     rowColor: '#00CEC933',
+    rackNumber: '2'
+  },
+  {
+    id: '3',
+    model: 'WAIPOUA1817',
+    indexVal: 'm44456',
+    repairStatus: 'Yes',
+    row: 'A',
+    slotNumber: '3',
+    bladeNumber: '3',
+    position: '2',
+    publishedBy: '2021-12-11',
+    ssCode: 'SS-AMZ012-1234',
+    serverN: '20726093448',
+    currentTest: 'Current IP: 127.0.0.1',
+    location: 'Row A, Slot 3, Blade 3, Position 2',
+    test: 'FinalZCONFORM',
+    operator: 'Matt S',
+    status: 'pass',
+    indicator: 'on',
+    isRepair: true,
+    highlight: false,
+    slot: "A3",
+    value: 3,
+    isMultiple: true,
+    rackColor: '#33D8D4',
+    filledStatus: "Empty",
+    timeRange: 12,
+    mserial: "M34249",
+    type: 'single',
+    opacity: 1,
+    section: "UTILITY",
+    rowColor: '#00CEC933',
+    isSlave: true,
     rackNumber: '2'
   },
   {
@@ -187,24 +196,22 @@ const sourceData = [
     location: 'Row A, Slot 32, Blade 4, Position 1',
     test: 'FinalZCONFORM',
     operator: 'Matt S',
-    status: 'empty',
+    status: 'fail',
     indicator: 'on',
     isRepair: true,
     highlight: false,
     slot: "A32",
     value: 3,
-    isMultiple: true,
     rackColor: '#33D8D4',
     filledStatus: "Empty",
     timeRange: 12,
-    server: "5",
     mserial: "M34249",
     type: 'single',
     opacity: 1,
     section: "UTILITY",
     rowColor: '#00CEC933',
     rackNumber: '2',
-    isSlave: true
+
   },
   {
     id: '4',
@@ -212,7 +219,7 @@ const sourceData = [
     indexVal: 'm33445',
     repairStatus: 'Yes',
     row: 'A',
-    slotNumber: '32',
+    slotNumber: '2',
     bladeNumber: '5',
     position: '2',
     label: '//Utility',
@@ -220,7 +227,7 @@ const sourceData = [
     ssCode: 'SS-AMZ012-1234',
     serverN: '20723093438',
     currentTest: 'Current IP: 127.0.0.1',
-    location: 'Row A, Slot 32, Blade 5, Position 2',
+    location: 'Row A, Slot 2, Blade 5, Position 2',
     test: 'Nick',
     operator: 'Devit',
     status: 'fail',
@@ -232,8 +239,6 @@ const sourceData = [
     rackColor: '#ED6746',
     filledStatus: "Empty",
     timeRange: 11,
-    isMultiple: true,
-    server: "5",
     mserial: "M34249",
     type: 'single',
     opacity: 1,
@@ -247,27 +252,26 @@ const sourceData = [
     indexVal: 'm11223',
     repairStatus: 'No',
     row: 'A',
-    slotNumber: '32',
+    slotNumber: '3',
     bladeNumber: '6',
     position: '2',
     publishedBy: '2021-12-11',
     ssCode: 'SS-AMZ012-1234',
     serverN: '20723093438',
     currentTest: ' Current IP: 127.0.0.1',
-    location: 'Row A, Slot 32, Blade 6, Position 2',
+    location: 'Row A, Slot 3, Blade 6, Position 2',
     test: 'FinalZCONFORM',
     operator: 'Devit',
     status: 'fail',
     indicator: 'off',
     isRepair: false,
     highlight: false,
-    slot: "A32",
-    value: 32,
+    slot: "A3",
+    value: 3,
     rackColor: '#ED6746',
     filledStatus: "Empty",
     timeRange: 10,
     isMultiple: true,
-    server: "5",
     mserial: "M34249",
     type: 'single',
     opacity: 1,
@@ -295,14 +299,11 @@ const sourceData = [
     indicator: 'off',
     isRepair: false,
     highlight: false,
-    isSlave: true,
-    isMultiple: true,
     slot: "A32",
     value: 32,
     rackColor: '#ED6746',
     filledStatus: "Empty",
     timeRange: 10,
-    server: "5",
     mserial: "M34249",
     type: 'single',
     opacity: 1,
@@ -330,14 +331,11 @@ const sourceData = [
     indicator: 'off',
     isRepair: false,
     highlight: false,
-    isMultiple: true,
-    isSlave: true,
     slot: "A32",
     value: 32,
     rackColor: '#ED6746',
     filledStatus: "Empty",
     timeRange: 10,
-    server: "5",
     mserial: "M34249",
     type: 'single',
     opacity: 1,
@@ -351,14 +349,14 @@ const sourceData = [
     indexVal: 'm22113',
     repairStatus: 'No',
     row: 'A',
-    slotNumber: '49',
+    slotNumber: '29',
     bladeNumber: '9',
     position: '2',
     publishedBy: '2021-12-11',
     ssCode: 'SS-AMZ012-1234',
     serverN: '20723093438',
     currentTest: 'Current IP: 127.0.0.1',
-    location: 'Row A, Slot 49, Blade 9, Position 2',
+    location: 'Row A, Slot 29, Blade 9, Position 2',
     test: 'CTCS',
     operator: 'Devit',
     status: 'pass',
@@ -370,7 +368,6 @@ const sourceData = [
     rackColor: '#43E955',
     filledStatus: "Empty",
     timeRange: 9,
-    server: "4",
     mserial: "M34249",
     type: 'single',
     opacity: 1,
@@ -403,7 +400,6 @@ const sourceData = [
     rackColor: '#33D8D4',
     filledStatus: "Empty",
     timeRange: 7,
-    server: "3",
     mserial: "M34249",
     type: 'single',
     opacity: 1,
@@ -417,14 +413,14 @@ const sourceData = [
     indexVal: 'm55443',
     repairStatus: 'No',
     row: 'A',
-    slotNumber: '36',
+    slotNumber: '24',
     bladeNumber: '11',
     position: '2',
     publishedBy: '2021-12-11',
     ssCode: 'SS-AMZ012-1234',
     serverN: '20723093438',
     currentTest: 'Current IP: 127.0.0.1',
-    location: 'Row A, Slot 36, Blade 11, Position 2',
+    location: 'Row A, Slot 24, Blade 11, Position 2',
     test: 'FinalZCONFORM',
     operator: 'Devit',
     label: '//Compute',
@@ -437,7 +433,6 @@ const sourceData = [
     rackColor: '#43E955',
     filledStatus: "Empty",
     timeRange: 6,
-    server: "3",
     mserial: "M34249",
     type: 'single',
     opacity: 1,
@@ -451,14 +446,14 @@ const sourceData = [
     indexVal: 'm12346',
     repairStatus: 'No',
     row: 'A',
-    slotNumber: '41',
+    slotNumber: '33',
     bladeNumber: '12',
     position: '2',
     publishedBy: '2021-12-11',
     ssCode: 'SS-AMZ012-1234',
     serverN: '20723093438',
     currentTest: 'Current IP: 127.0.0.1',
-    location: 'Row A, Slot 41, Blade 12, Position 2',
+    location: 'Row A, Slot 33, Blade 12, Position 2',
     test: 'FinalZCONFORM',
     operator: 'Devit',
     status: 'fail',
@@ -470,7 +465,6 @@ const sourceData = [
     rackColor: '#ED6746',
     filledStatus: "Empty",
     timeRange: 5,
-    server: "2",
     mserial: "M34249",
     type: 'single',
     opacity: 1,
@@ -503,7 +497,38 @@ const sourceData = [
     rackColor: '#33D8D4',
     filledStatus: "Empty",
     timeRange: 4,
-    server: "2",
+    mserial: "M34249",
+    type: 'single',
+    opacity: 1,
+    section: "UTILITY",
+    rowColor: '#00CEC933',
+    rackNumber: '2'
+  },
+  {
+    id: '10',
+    model: 'WAIPOUA1816',
+    indexVal: 'm55667',
+    repairStatus: 'No',
+    row: 'A',
+    slotNumber: '49',
+    bladeNumber: '13',
+    position: '2',
+    publishedBy: '2021-12-11',
+    ssCode: 'SS-AMZ012-1234',
+    serverN: '20723093438',
+    currentTest: 'Current IP: 127.0.0.1',
+    location: 'Row A, Slot 49, Blade 13, Position 2',
+    test: 'FinalZCONFORM',
+    operator: 'Devit',
+    status: 'running',
+    indicator: 'off',
+    isRepair: false,
+    highlight: false,
+    slot: "A49",
+    value: 49,
+    rackColor: '#33D8D4',
+    filledStatus: "Empty",
+    timeRange: 4,
     mserial: "M34249",
     type: 'single',
     opacity: 1,
@@ -517,14 +542,14 @@ const sourceData = [
     indexVal: 'm99887',
     repairStatus: 'No',
     row: 'A',
-    slotNumber: '26',
+    slotNumber: '20',
     bladeNumber: '14',
     position: '2',
     publishedBy: '2021-12-11',
     ssCode: 'SS-AMZ012-1234',
     serverN: '20723093438',
     currentTest: 'Current IP: 127.0.0.1',
-    location: 'Row A, Slot 26, Blade 14, Position 2',
+    location: 'Row A, Slot 20, Blade 14, Position 2',
     test: 'FinalZCONFORM',
     operator: 'Devit',
     status: 'pass',
@@ -536,7 +561,70 @@ const sourceData = [
     rackColor: '#43E955',
     filledStatus: "Empty",
     timeRange: 3,
-    server: "1",
+    mserial: "M34249",
+    type: 'single',
+    opacity: 1,
+    section: "UTILITY",
+    rowColor: '#00CEC933',
+
+  },
+  {
+    id: '11',
+    model: 'WAIPOUA1817',
+    indexVal: 'm99887',
+    repairStatus: 'No',
+    row: 'A',
+    slotNumber: '20',
+    bladeNumber: '15',
+    position: '2',
+    publishedBy: '2021-12-11',
+    ssCode: 'SS-AMZ012-1234',
+    serverN: '20723093438',
+    currentTest: 'Current IP: 127.0.0.1',
+    location: 'Row A, Slot 20, Blade 15, Position 2',
+    test: 'FinalZCONFORM',
+    operator: 'Devit',
+    status: 'running',
+    indicator: 'off',
+    isRepair: false,
+    highlight: false,
+    slot: "A20",
+    value: 20,
+    rackColor: '#43E955',
+    filledStatus: "Empty",
+    timeRange: 3,
+    mserial: "M34249",
+    type: 'single',
+    opacity: 1,
+    section: "UTILITY",
+    rowColor: '#00CEC933',
+
+  },
+  {
+    id: '12',
+    model: 'WAIPOUA1818',
+    indexVal: 'm55443',
+    repairStatus: 'No',
+    row: 'A',
+    slotNumber: '26',
+    bladeNumber: '15',
+    position: '2',
+    publishedBy: '2021-12-11',
+    ssCode: 'SS-AMZ012-1234',
+    serverN: '20723093438',
+    currentTest: 'Current IP: 127.0.0.1',
+    location: 'Row A, Slot 26, Blade 13, Position 2',
+    test: 'PreZConform',
+    operator: 'Devit',
+    status: 'fail',
+    indicator: 'off',
+    isRepair: false,
+    highlight: false,
+    slot: "A26",
+    value: 26,
+    rackColor: '#ED6746',
+    filledStatus: "Empty",
+    timeRange: 2,
     mserial: "M34249",
     type: 'single',
     opacity: 1,
@@ -560,7 +648,7 @@ const sourceData = [
     location: 'Row A, Slot 26, Blade 15, Position 2',
     test: 'PreZConform',
     operator: 'Devit',
-    status: 'fail',
+    status: 'pass',
     indicator: 'off',
     isRepair: false,
     highlight: false,
@@ -569,7 +657,6 @@ const sourceData = [
     rackColor: '#ED6746',
     filledStatus: "Empty",
     timeRange: 2,
-    server: "1",
     mserial: "M34249",
     type: 'single',
     opacity: 1,
@@ -579,7 +666,7 @@ const sourceData = [
   },
   {
     id: '13',
-    model: 'WAIPOUA185',
+    model: 'WAIPOUA1815',
     indexVal: 'm22113',
     repairStatus: 'No',
     row: 'A',
@@ -602,7 +689,38 @@ const sourceData = [
     rackColor: '#FAF8C7',
     filledStatus: "Empty",
     timeRange: 9,
-    server: "4",
+    mserial: "M34249",
+    type: 'single',
+    opacity: 1,
+    section: "UTILITY",
+    rowColor: '#00CEC933',
+    rackNumber: '2'
+  },
+  {
+    id: '13',
+    model: 'WAIPOUA185',
+    indexVal: 'm22113',
+    repairStatus: 'No',
+    row: 'A',
+    slotNumber: '10',
+    bladeNumber: '16',
+    position: '2',
+    publishedBy: '2021-12-11',
+    ssCode: 'SS-AMZ012-1234',
+    serverN: '20723093438',
+    currentTest: 'Current IP: 127.0.0.1',
+    location: 'Row A, Slot 10, Blade 16, Position 2',
+    test: 'CTCS',
+    operator: 'Devit',
+    status: 'notstarted',
+    indicator: 'off',
+    isRepair: false,
+    highlight: false,
+    slot: "A10",
+    value: 10,
+    rackColor: '#FAF8C7',
+    filledStatus: "Empty",
+    timeRange: 9,
     mserial: "M34249",
     type: 'single',
     opacity: 1,
@@ -612,23 +730,29 @@ const sourceData = [
   },
 ];
 
-
 const App = () => {
+  // const isLogin: any = sessionStorage.getItem('isLogin');
+  // const loginDetails = isLogin ? JSON.parse(isLogin) : {}
   const [server, setServer] = useState('server');
-  const [isLoggedIn, setLogin] = useState(false); //should be false
+  // const [isLoggedIn, setLogin] = useState(loginDetails?.login || false); //should be false
+  const [isLoggedIn, setLogin] = useState(true); //should be false
   const [rackId, setRackId] = useState('');
   const [rowVal, setRowVal] = useState<any>('');
   const [selectedData, setSelectedData] = useState<any>([]);
   const [anchorStateHeader, setStateHeader] = React.useState(true);
   const history = useHistory();
 
-
+  const client = new ApolloClient({
+    uri: 'http://mfgsw-qa.ztsystems.com:5003/graphql',
+    cache: new InMemoryCache()
+  });
 
   const onLogin = (values: any) => {
     console.log('vals', values);
     //api 
     setLogin(true);
-    let item: any = { loggedIn: true, token: "" };
+    let item: any = { loggedIn: false, token: "" };
+    sessionStorage.setItem('isLogin', JSON.stringify({ login: true }));
     const action: DashboardAction = {
       type: "authentication",
       payload: item
@@ -637,31 +761,97 @@ const App = () => {
     //dispatch
   }
 
+
   const [globalView, setGlobalView] = useState<any>('GLOBAL');  //global
   const [countryView, setCountryView] = useState<any>(null); //US:CN:NL
   const [factoryView, setFactoryView] = useState<any>(null); //United States Factories 350:4050 | China Factories... | Netherland Factories...
   const [levelView, setLevelView] = useState<any>(null); //United States Factories 350 -> L10 or L11 || 4050 -> L10 or L11  | China Factories... | Netherland Factories...
-  const [CurrMenuView, setCurrMenuView] = useState<any>(null);  //United States Factories 350 -> L10 or L11 -> Summary,Server,Rack,Room ...
+  const [currMenuView, setCurrMenuView] = useState<any>(null);  //United States Factories 350 -> L10 or L11 -> Summary,Server,Rack,Room ...
 
-  const [factories, setFactories] = useState<any>([]); //Used to filter out factory options based on country ex. U.S - F350,F450
-  const [levels, setLevels] = useState<any>([{}]); //Used to filter out level options based on factory selected: ex. L10,L11
-
-  const [globalPosition, setGlobalPosition] = useState<any>(null);
-  const [countryPosition, setCountryPosition] = useState<any>(null);
-  const [factoryPosition, setFactoryPosition] = useState<any>(null);
-  const [levelPosition, setLevelPosition] = useState<any>(null);
-  // const [currMenuPosition, setCurrMenuPosition] = useState('SERVER ROOM - SERVER');
+  const [apiServerData, setApiServerData] = useState<any>(null);  //API Server Data
+  const [apiRackData, setApiRackData] = useState<any>(null);  //API Rack Data
+  const [apiRowData, setApiRowData] = useState<any>(null);  //API Row Data
 
 
-  //Define user path based upon URL Change and update footer menu.
-  // useEffect(() => {
-  //   return history.listen((location) => { 
-  //     console.log(`You changed the page to: ${location.pathname}`) 
-  //     let currentPath = location.pathname;
-  //     console.log("Country is: " + currentPath.split("/")[2]);
-  //   }) 
-  // },[history])
+ useEffect(() => {console.log("this is api data", apiServerData);},
+ [apiServerData]);
 
+  const footerData:any ={
+    "Global" : {
+          "U.S" : {
+            "350" : {
+                "L10" : [
+                    "Rack",
+                    "Server",
+                    {"Row":["A","B","C","D","E","F"]}
+                  ],
+                "L11" : [
+                    "Rack",
+                    {"Row":["A","B","C","D","E","F"]}
+                  ]
+              },
+            "4050" : {
+                "L10" : [
+                    "Rack",
+                    "Server",
+                    {"Row":["A","B","C","D","E","F"]}
+                  ],
+                "L11" : [
+                    "Rack",
+                    {"Row":["A","B","C","D","E","F"]}
+                  ]
+              },
+         },
+         "C.N" : {
+          "CN-F1" : {
+              "L10" : [
+                  "Rack",
+                  "Server",
+                  {"Row":["A","B","C","D","E","F"]}
+                ],
+              "L11" : [
+                  "Rack",
+                  {"Row":["A","B","C","D","E","F"]}
+                ]
+            },
+          "CN-F2" : {
+              "L10" : [
+                  "Rack",
+                  "Server",
+                  {"Row":["A","B","C","D","E","F"]}
+                ],
+              "L11" : [
+                  "Rack",
+                  {"Row":["A","B","C","D","E","F"]}
+                ]
+            },
+       },
+       "N.L" : {
+        "NL-F1" : {
+            "L10" : [
+                "Rack",
+                "Server",
+                {"Row":["A","B","C","D","E","F"]}
+              ],
+            "L11" : [
+                "Rack",
+                {"Row":["A","B","C","D","E","F"]}
+              ]
+          },
+        "NL-F2" : {
+            "L10" : [
+                "Rack",
+                "Server",
+                {"Row":["A","B","C","D","E","F"]}
+              ],
+            "L11" : [
+                "Rack",
+                {"Row":["A","B","C","D","E","F"]}
+              ]
+          },
+     }
+      }
+  }
 
   const handleClick = (event: React.MouseEvent, val: any, listener: any) => {
     if (val) {
@@ -673,157 +863,252 @@ const App = () => {
       left: event.pageX
     });
   };
+
+
+  //Used for Nested footer Menu
+  const [menuPosition, setMenuPosition] = useState<any>(null);
+
+  const location = useLocation();
+  useEffect(() => {
+      if(isLoggedIn){
+        //Used to filter out data based on url(Dashboard Page)
+        if(location.pathname){
+          const searchURL = document.location.pathname.split('/');
+          console.log(searchURL);
+          setCountryView(searchURL[2] ? searchURL[2] : null);
+          setFactoryView(searchURL[3]? searchURL[3] : null);
+          setLevelView(searchURL[4] ?  searchURL[4] : null);
+          console.log("SearchURL[5] is : " + searchURL[5]);
+          if(searchURL[5] && searchURL[5]  === 'Server'){
+            setCurrMenuView('SERVER ROOM - Server');
+            setServer('server')
+
+          }
+          else if(searchURL[5] && searchURL[5] === 'Rack'){
+            setCurrMenuView('SERVER ROOM - Rack');
+            setServer('racks')
+
+          }
+          else if(searchURL[5] && searchURL[5].includes('Row')){
+            setCurrMenuView(`SERVER ROOM - ${searchURL[5].split('-')[0]} ${searchURL[5].split('-')[1]}`);
+            setServer('row')
+            setRowVal(searchURL[5].split('-')[1]);
+          }
+        }
+      }
+    }, []);
+
+
+
+    useEffect(()=>{
+      if(currMenuView !== null && currMenuView === 'SERVER ROOM - Server'){
+        console.log("Server");
+        client
+        .query({
+          query: gql`
+            query {
+              GetServers(first:3){
+                totalCount
+                edges {
+                  node {
+                    ipAddress
+                    serialNumber
+                    model
+                    ssCode
+                    operator
+                    onlineStatus
+                    repairCount
+                    lastRepair
+                    customer
+                    _id
+                    location{
+                      site
+                      building
+                      room
+                      row
+                      slot
+                      blade
+                      position
+                    }
+                    inRepair
+                    rack
+                    statuses{
+                      timestamp
+                      status
+                      test
+                      symptom{
+                        component
+                        type
+                        code
+                        detail
+                      }
+                      code
+                    }
+                  }
+                }
+              }
+            }
+          `
+        })
+        .then((serverResult) => {
+          console.log(serverResult)
+          const storedApiData: { id: any; model: any; repairStatus: any; row: any; slotNumber: any; bladeNumber: any; position: any; publishedBy: any; ssCode: any; serverN: any; currentTest: any; location: string; test: any; operator: any; status: any; indicator: any; isRepair: any; slot: string; value: any; section: null; rackNumber: any; }[] = [];
+          Object.keys(serverResult.data.GetServers.edges).map((pos: any)=>{
+              storedApiData.push({
+                id: serverResult.data.GetServers.edges[pos].node._id,
+                model: serverResult.data.GetServers.edges[pos].node.model,
+                repairStatus: serverResult.data.GetServers.edges[pos].node.inRepair ? 'Yes' : 'No',
+                row: serverResult.data.GetServers.edges[pos].node.location.row,
+                slotNumber: serverResult.data.GetServers.edges[pos].node.location.slot,
+                bladeNumber: serverResult.data.GetServers.edges[pos].node.location.blade,
+                position: serverResult.data.GetServers.edges[pos].node.location.position,
+                publishedBy: serverResult.data.GetServers.edges[pos].node.statuses[0].timestamp,
+                ssCode: serverResult.data.GetServers.edges[pos].node.ssCode,
+                serverN: serverResult.data.GetServers.edges[pos].node.serialNumber,
+                currentTest: serverResult.data.GetServers.edges[pos].node.ipAddress,
+                location: `Row ${serverResult.data.GetServers.edges[pos].node.location.row}, Slot ${serverResult.data.GetServers.edges[pos].node.location.slot}, Blade ${serverResult.data.GetServers.edges[pos].node.location.blade}, Position ${serverResult.data.GetServers.edges[pos].node.location.position} `,
+                test: serverResult.data.GetServers.edges[pos].node.statuses[0].test,
+                operator: serverResult.data.GetServers.edges[pos].node.operator,
+                status: serverResult.data.GetServers.edges[pos].node.statuses[0].status,
+                indicator: serverResult.data.GetServers.edges[pos].node.onlineStatus,
+                isRepair: serverResult.data.GetServers.edges[pos].node.inRepair,
+                slot: `${serverResult.data.GetServers.edges[pos].node.location.row}${serverResult.data.GetServers.edges[pos].node.location.slot}`,
+                value: serverResult.data.GetServers.edges[pos].node.location.slot,
+                section: null,
+                rackNumber: serverResult.data.GetServers.edges[pos].node.rack
+              })
+          });
+          setApiServerData(storedApiData);
+          
+        })
+      }
+      // else if(currMenuView !== null && currMenuView === 'SERVER ROOM - Rack'){
+      //   console.log("Rack");
+      //   client
+      //   .query({
+      //     query: gql`
+      //       query{
+      //         GetRacks{
+      //           totalCount,
+      //           edges{
+      //             node{
+      //               _id
+      //               serialNumber
+      //               model
+      //               servers
+      //               index
+      //               rmIp
+      //               statuses{
+      //                 timestamp
+      //                 status
+      //                 test
+      //                 symptom{
+      //                   component
+      //                   type
+      //                   code
+      //                   detail
+      //                 }
+      //                 code
+      //               }
+      //               location{
+      //                 site
+      //                 building
+      //                 room
+      //                 row
+      //                 slot
+      //                 blade
+      //                 position
+      //               }
+      //             }
+      //             cursor
+      //           }
+      //         }
+      //       }
+      //     `
+      //   })
+      //   .then((rackResults) => {
+      //     console.log(`The Rack Data is : ${rackResults}`)
+      //   }
+      // }
+
+      else if(currMenuView !== null && currMenuView.includes('Row')){
+        console.log("Row");
+      }
+    },[currMenuView]);
   
+
+     // handleItemClick(event, {country:countryName, factory: factoryName}, `root/${countryName}/${factoryName}`)
   const handleItemClick = (event: React.MouseEvent | null, value: any, routeValue: string, rowValue?: string) => {
-      if(value.country === 'U.S' || value.country === "C.N" || value.country == "N.L" || value.country === "GLOBAL"){
-        if(value.country === 'U.S'){
-          setCountryView(value.country);
-          setFactoryView(null);
-          setLevelView(null);
-          setCurrMenuView(null);
-          setFactories(['F350', 'F4050']);
-          console.log('Country Value Set To: ' + value.country )
-          if(value.factory === 'F350' || value.factory === 'F4050' ){
-            console.log('Factory Value Set To: ' + value.factory )
+
+    Object.keys(footerData['Global']).forEach((checkCountry:string)=>{
+      if(value.country === checkCountry){
+        setCountryView(value.country);
+        setFactoryView(null);
+        setLevelView(null); 
+        setCurrMenuView(null);
+        setServer('server');
+        Object.keys(footerData['Global'][checkCountry]).map((checkFactory:string)=>{
+          if(value.factory === checkFactory){
             setFactoryView(value.factory);
             setLevelView(null);
             setCurrMenuView(null);
-            setLevels(['L10', 'L11']);
-            if(value.level === 'L10' || value.level === 'L11'){
-              console.log('Level Value Set To: ' + value.level )
-              setLevelView(value.level);
-              setCurrMenuView(null);
-              if(value.currMenu === 'SERVER ROOM - SERVER'){
-                console.log('Current Menu Set To: ' + value.currMenu);
-                setCurrMenuView(value.currMenu);
-                setServer('server')
-                setRowVal(rowValue);
-
-
+            setServer('server');
+            Object.keys(footerData['Global'][checkCountry][checkFactory]).map((checkLevel:string)=>{
+              if(value.level === checkLevel){
+                setLevelView(value.level);
+                setCurrMenuView(null);
+                Object.values(footerData['Global'][checkCountry][checkFactory][checkLevel]).map((checkMenuView:any)=>{
+                  if(value.currMenu === checkMenuView && value.currMenu.includes('Row')){
+                    setCurrMenuView(value.currMenu ? `SERVER ROOM - ${value.currMenu}` : null);
+                    setServer('row')
+                    setRowVal(rowValue);
+                  }
+                  else{
+                    setCurrMenuView(value.currMenu ? `SERVER ROOM - ${value.currMenu}` : null);
+                  }
+                })
               }
-              else if(value.currMenu === 'SERVER ROOM - RACK'){
-                console.log('Current Menu Set To: ' + value.currMenu);
-                setCurrMenuView(value.currMenu);
-                setServer('racks')
-                setRowVal(rowValue);
-
-              }  
-                
-              else if(value.currMenu === `SERVER ROOM - ROW A` || value.currMenu === `SERVER ROOM - ROW B` || 
-                value.currMenu === `SERVER ROOM - ROW C` || value.currMenu === `SERVER ROOM - ROW D`||
-                value.currMenu === `SERVER ROOM - ROW E` || value.currMenu === `SERVER ROOM - ROW F`
-              ){
-                console.log('Current Menu Set To: ' + value.currMenu);
-                setCurrMenuView(value.currMenu);
-                setServer('row')
-                setRowVal(rowValue);
-                
-                
-              }
-            }
+            })
           }
-        }
-        if(value.country === 'C.N'){
-          setCountryView(value.country);
-          setFactoryView(null);
-          setLevelView(null);
-          setCurrMenuView(null);
-          setFactories(['CN-F1','CN-F2']);
-          if(value.factory === 'CN-F1' || value.factory === 'CN-F2' ){
-            console.log('Factory Value Set To: ' + value.factory )
-            setFactoryView(value.factory);
-            setLevelView(null);
-            setCurrMenuView(null);
-            setLevels(['CN-L10', 'CN-L11']);
-            if(value.level === 'CN-L10' || value.level === 'CN-L11'){
-              console.log('Level Value Set To: ' + value.level )
-              setLevelView(value.level);
-              setCurrMenuView(null);
-              if(value.currMenu === 'SERVER ROOM - SERVER'){
-                console.log('Current Menu Set To: ' + value.currMenu);
-                setCurrMenuView(value.currMenu);
-                setServer('server')
-                setRowVal(rowValue);
-
-
-              }
-              else if(value.currMenu === 'SERVER ROOM - RACK'){
-                console.log('Current Menu Set To: ' + value.currMenu);
-                setCurrMenuView(value.currMenu);
-                setServer('racks')
-                setRowVal(rowValue);
-
-              }  
-                
-              else if(value.currMenu === `SERVER ROOM - ROW A` || value.currMenu === `SERVER ROOM - ROW B` || 
-                value.currMenu === `SERVER ROOM - ROW C` || value.currMenu === `SERVER ROOM - ROW D`||
-                value.currMenu === `SERVER ROOM - ROW E` || value.currMenu === `SERVER ROOM - ROW F`
-              ){
-                console.log('Current Menu Set To: ' + value.currMenu);
-                setCurrMenuView(value.currMenu);
-                setServer('row')
-                setRowVal(rowValue);
-              }
-            }
-          }
-        }
-        if(value.country === 'N.L'){
-          setCountryView(value.country);
-          setFactoryView(null);
-          setLevelView(null);
-          setCurrMenuView(null);
-          setFactories(['NL-F1','NL-F2']);
-          if(value.factory === 'NL-F1' || value.factory === 'NL-F2' ){
-            console.log('Factory Value Set To: ' + value.factory )
-            setFactoryView(value.factory);
-            setLevelView(null);
-            setCurrMenuView(null);
-            setLevels(['NL-L10', 'NL-L11']);
-            if(value.level === 'NL-L10' || value.level === 'NL-L11'){
-              console.log('Level Value Set To: ' + value.level )
-              setLevelView(value.level);
-              setCurrMenuView(null);
-              if(value.currMenu === 'SERVER ROOM - SERVER'){
-                console.log('Current Menu Set To: ' + value.currMenu);
-                setCurrMenuView(value.currMenu);
-                setServer('server')
-                setRowVal(rowValue);
-
-
-              }
-              else if(value.currMenu === 'SERVER ROOM - RACK'){
-                console.log('Current Menu Set To: ' + value.currMenu);
-                setCurrMenuView(value.currMenu);
-                setServer('racks')
-                setRowVal(rowValue);
-
-              }  
-                
-              else if(value.currMenu === `SERVER ROOM - ROW A` || value.currMenu === `SERVER ROOM - ROW B` || 
-                value.currMenu === `SERVER ROOM - ROW C` || value.currMenu === `SERVER ROOM - ROW D`||
-                value.currMenu === `SERVER ROOM - ROW E` || value.currMenu === `SERVER ROOM - ROW F`
-              ){
-                console.log('Current Menu Set To: ' + value.currMenu);
-                setCurrMenuView(value.currMenu);
-                setServer('row')
-                setRowVal(rowValue);
-              }
-            }
-          }
-        }
-        if(value.country === 'GLOBAL'){
-          setCountryView(null);
-          setFactoryView(null);
-          setLevelView(null);
-          setCurrMenuView(null);
-        }
+        })
+      }
+      else if(value.country === "GLOBAL"){
+        setCountryView(null);
+        setFactoryView(null);
+        setLevelView(null); 
+        setCurrMenuView(null);
+        setServer('server');
 
       }
+    })
     // setMenuPosition(null);
     // setCurrentMenu(value);
     // setRowVal(rowValue);
     handleChange(routeValue);
   };
+
+
+  const checkForRowData = (countryName:any,factoryName:any,levelName:any,currMenuView:any)=>{
+    if(currMenuView['Row']){
+      Object.values(currMenuView['Row']);
+      return (
+          <NestedMenuItem
+            label="Row"
+            parentMenuOpen={!!menuPosition}
+            className="currMenuSection"
+            >
+              <div className="rowLetterContainer">
+              {Object.values(currMenuView['Row']).map((data: any) => (
+                <MenuItem onClick={(event: React.MouseEvent<Element, MouseEvent> | null) => handleItemClick(event, {country:countryName, factory:factoryName, level: levelName, currMenu: `${Object.keys(currMenuView)} ${data}`}, `root/${countryName}/${factoryName}/${levelName}/${Object.keys(currMenuView)}-${data}`, data)} className={"rowSection"}>{data}</MenuItem>
+            ))}
+              </div>
+          </NestedMenuItem>
+      )
+
+
+    }
+    return <MenuItem onClick={(event: React.MouseEvent<Element, MouseEvent> | null) => handleItemClick(event, {country:countryName, factory:factoryName, level: levelName, currMenu: currMenuView}, `root/${countryName}/${factoryName}/${levelName}/${currMenuView}`)}  className="currMenuSection">{currMenuView}</MenuItem>;
+  }
 
   const handleChange = (value: string) => {
     history.push(`/${value}`);
@@ -881,137 +1166,49 @@ const App = () => {
 
             <Switch>
               {/* ---------------------------------- Global Summary Section ----------------------------------------------*/}
-              {/* /root : RENDER GLOBAL SUMMARY PAGE */}
+              {/* /root : Render Global Summary */}
               <Route exact path="/root">
-                  <GlobalSummaryComponent />
+                  <GlobalSummaryComponent  />
               </Route>
 
 
-              {/* ---------------------------------- United States Summary Section ----------------------------------------------*/}
-              {/* /root/US-Sum : RENDER U.S SUMMARY */}
-              <Route exact path ="/root/U.S-Sum">
-                <UnitedStatesSummaryComponent/>
+              {/* ---------------------------------- Country Summary Section ----------------------------------------------*/}
+              {/* /root/countryName : Render Specific Country Summary*/}
+              <Route exact path ="/root/:countryView">
+                <CountrySummaryComponent country={countryView}/>
               </Route>
 
 
-              {/* -----------------------------------US:4050------------------------------------------- */} 
-              {/* /Root/US_Sum/F4050 : RENDER FACTORY 4050 SUMMARY */}
-              <Route exact path ="/root/U.S-Sum/F4050">
-                <Factory4050SummaryComponent/>
-              </Route>
-
-              {/* -----------------------------------US:4050 L11 ------------------------------------------- */}
-
-              {/* /root/US-Sum/F4050/L11-Summary : RENDER FACTORY 4050 L11 SUMMARY */}
-              <Route exact path ="/root/U.S-Sum/F4050/L11-Summary">
-                <Factory4050L11SummaryComponent/>
-              </Route>
-
-              {/* /root/US-Sum/F4050/L11-Server : RENDER 4050 L11 SERVER */}
-              <Route exact path ="/root/U.S-Sum/F4050/L11-Server">
-                <Factory4050L11ServerComponent/>
-              </Route>
-
-              {/* /root/US-Sum/F4050/L11-Rack : RENDER 4050 L11 RACK */}
-              <Route exact path ="/root/U.S-Sum/F4050/L11-Rack">
-                <Factory4050L11RackComponent/>
-              </Route>
-              
-              {/* /root/US-Sum/F4050/L11-Row : RENDER 4050 L11 ROW */}
-              <Route exact path ="/root/U.S-Sum/F4050/L11-Row">
-                <Factory4050L11RowComponent/>
-              </Route>
-
-              {/* -----------------------------------US:4050 L10 ------------------------------------------- */}
-              
-              {/* /root/US-Sum/F4050/L10-Summary : RENDER FACTORY 4050 L10 SUMMARY */}
-              <Route exact path ="/root/U.S-Sum/F4050/L10-Summary">
-                <Factory4050L10SummaryComponent/>
-              </Route>
-
-              {/* /root/US-Sum/F4050/L10-Server : RENDER 4050 L10 SERVER */}
-              <Route exact path ="/root/U.S-Sum/F4050/L10-Server">
-                <Factory4050L10ServerComponent/>
-              </Route>
-
-              {/* /root/US-Sum/F4050/L10-Rack : RENDER 4050 L10 Rack */}
-              <Route exact path ="/root/U.S-Sum/F4050/L10-Rack">
-                <Factory4050L10RackComponent/>
-              </Route>
-
-              {/* /root/US-Sum/F4050/L10-Row : RENDER 4050 L10 ROW */}
-              <Route exact path ="/root/U.S-Sum/F4050/L10-Row">
-                <Factory4050L10RowComponent/>
+              {/* -----------------------------------Factory Summary Section------------------------------------------- */} 
+              {/* /Root/countryName/factoryName  : Render Specific Factory Summary*/}
+              <Route exact path ="/root/:countryView/:factoryView">
+                <FactorySummaryComponent country={countryView} factory={factoryView}/>
               </Route>
 
 
-              {/* -----------------------------------US:350------------------------------------------- */} 
-              {/* /root/US-Sum/F350 : RENDER FACTORY 350 SUMMARY */}
-              <Route exact path ="/root/U.S-Sum/F350">
-                <Factory350SummaryComponent/>
-              </Route>
-
-              {/* -----------------------------------US:350 L10 ------------------------------------------- */}
-
-              {/* /root/US-Sum/F350/L10-Summary : RENDER FACTORY 350 L10 SUMMARY */}
-              <Route exact path ="/root/U.S-Sum/F350/L10-Summary">
-                <Factory350L10SummaryComponent/>
-              </Route>
-
-              {/* /root/US-Sum/F350/L10-server : RENDER FACTORY 350 L10 SERVER */}
-              <Route exact path ="/root/U.S-Sum/F350/L10-Server">
-                <Factory350L10ServerComponent/>
-              </Route>
-
-              {/* /root/US-Sum/F350/L10-Rack : RENDER 350 L10 Rack */}
-              <Route exact path ="/root/U.S-Sum/F350/L10-Rack">
-                <Factory350L10RackComponent/>
-              </Route>
-
-              {/* /root/US-Sum/F350/L10-Row : RENDER 350 L10 ROW */}
-              <Route exact path ="/root/U.S-Sum/F350/L10-Row">
-                <Factory350L10RowComponent/>
-              </Route>
-
-              
-              {/* -----------------------------------US:350 L11 ------------------------------------------- */}
-              {/* /root/US-Sum/F350/L11-Summary : RENDER FACTORY 350 L11 SUMMARY */}
-              <Route exact path ="/root/U.S-Sum/F350/L11-Summary">
-                <Factory350L11SummaryComponent/>
+              {/* -----------------------------------Factory Summary Section------------------------------------------- */} 
+              {/* /root/countryName/factoryName/levelName : Render Specific Level Summary */}
+              <Route exact path ="/root/:countryView/:factoryView/:levelView">
+                <LevelSummaryComponent country={countryView} factory={factoryView} level={levelView}/>
               </Route>
 
 
-              {/* /root/US-Sum/F350/L11-Server : RENDER FACTORY 350 L11 SERVER */}
-              <Route exact path ="/root/U.S-Sum/F350/L11-Server">
-                <Factory350L11ServerComponent/>
-              </Route>
-
-              {/* /root/US-Sum/F350/L11-Rack : RENDER 350 L11 Rack */}
-              <Route exact path ="/root/U.S-Sum/F350/L11-Rack">
-                <Factory350L11RackComponent/>
-              </Route>
-
-              {/* /root/US-Sum/F350/L11-Row : RENDER 350 L11 ROW */}
-              <Route exact path ="/root/U.S-Sum/F350/L11-Row">
-                <Factory350L11RowComponent/>
-              </Route>
-
-              {/* United States Summary Section : ENDS*/}
 
 
+              {/* urlPath={history} */}
               <Route exact path='/root/:countryView/:factoryView/:levelView/Server'>
-                <Dashboard data={sourceData} onFilterSelect={(data) => setSelectedData(data)} />
+                <Dashboard data={apiServerData} onFilterSelect={(data) => setSelectedData(data)} history={history} />
               </Route>
               <Route exact path='/root/:countryView/:factoryView/:levelView/Rack'>
-                <RackView data={sourceData} rackNavigation={(val: string) => { setRackId(`Row ${val}`); handleItemClick(null, `SERVER ROOM ROW ${val}`, 'row') }} />
+                <RackView data={sourceData} rackNavigation={(val: string) => { setRackId(`Row ${val}`); handleItemClick(null, `SERVER ROOM ROW ${val}`, 'row') }} history={history} />
               </Route>
-              <Route exact path='/root/:countryView/:factoryView/:levelView/Row'>
-                <RowView data={sourceData} />
+              <Route exact path='/root/:countryView/:factoryView/:levelView/Row-:RowVal'>
+                {/* <RowView data={sourceData} history={history}/> */}
               </Route>
             </Switch>
 
 
-          </div>
+          </div> 
           <>
             <div style={{ position: 'absolute', bottom: '0', left: '50%' }}>
               <ExpandLess onClick={toggleDrawerFooter('bottom', true)} style={{ cursor: 'pointer' }} />
@@ -1029,84 +1226,62 @@ const App = () => {
                 </div>
                 <div className="bottom-sec">
                   {/* <div className="bottom-title">GLOBAL &#62; US &#62; 4050 &#62;</div> */}
-                  <> <div className="bottom-title" onClick={(e: React.MouseEvent<Element, MouseEvent>) => { handleClick(e, globalPosition, setGlobalPosition) }}>{globalView} &gt; </div>
+                  <> <div className="bottom-title" onClick={(e: React.MouseEvent<Element, MouseEvent>) => { handleClick(e, menuPosition, setMenuPosition) }}>{globalView} &gt; </div>
                     <Menu
-                      open={!!globalPosition}
-                      onClose={() => setGlobalPosition(null)}
+                      open={!!menuPosition}
+                      onClose={() => setMenuPosition(null)}
                       anchorReference="anchorPosition"
-                      anchorPosition={globalPosition}
+                      anchorPosition={menuPosition}
                       elevation={0}
                       classes={{ paper: 'menu-paper' }}
                     >
-                      <MenuItem onClick={(event: React.MouseEvent<Element, MouseEvent> | null) => handleItemClick(event, {country:'GLOBAL'}, 'root') }>GLOBAL</MenuItem>
-                      <MenuItem onClick={(event: React.MouseEvent<Element, MouseEvent> | null) => handleItemClick(event, {country:'U.S'}, 'root/U.S-Sum') }>U.S</MenuItem>
-                      <MenuItem onClick={(event: React.MouseEvent<Element, MouseEvent> | null) => handleItemClick(event, {country:'C.N'}, 'root/C.N-Sum')}>C.N</MenuItem>
-                      <MenuItem onClick={(event: React.MouseEvent<Element, MouseEvent> | null) => handleItemClick(event, {country:'N.L'}, 'root/N.L-Sum')}>N.L</MenuItem>
-                    </Menu></>
+                      <MenuItem onClick={(event: React.MouseEvent<Element, MouseEvent> | null) => handleItemClick(event, {country:'GLOBAL'}, 'root') } className="countrySection">GLOBAL</MenuItem>
+                      {Object.keys(footerData['Global']).map((countryName:string)=>(
+                              <NestedMenuItem
+                                label={countryName}
+                                parentMenuOpen = {!!menuPosition}
+                                onClick={(event: React.MouseEvent<Element, MouseEvent> | null) => handleItemClick(event, {country:countryName}, `root/${countryName}`)}
+                                className={"countrySection" }
+                                >
+                                  {Object.keys(footerData['Global'][countryName]).map((factoryName)=>(
+                                    <NestedMenuItem
+                                      id='factorySection'
+                                      label={factoryName}
+                                      parentMenuOpen = {!!menuPosition}
+                                      onClick={(event: React.MouseEvent<Element, MouseEvent> | null) => handleItemClick(event, {country:countryName, factory: factoryName}, `root/${countryName}/${factoryName}`)}
+                                      className="factorySection"
+                                      >
+                                      
+                                      {Object.keys(footerData['Global'][countryName][factoryName]).map((levelName)=>(
+                                        <NestedMenuItem
+                                        label={levelName}
+                                        parentMenuOpen = {!!menuPosition}
+                                        onClick={(event: React.MouseEvent<Element, MouseEvent> | null) => handleItemClick(event,{country:countryName, factory:factoryName, level: levelName}, `root/${countryName}/${factoryName}/${levelName}`)}
+                                        className="levelSection"
+                                        >
+                                            
+                                          {Object.values(footerData['Global'][countryName][factoryName][levelName]).map((currMenuView:any)=>(
+                                            checkForRowData(countryName,factoryName,levelName,currMenuView)
+                                            ))
+                                          }
 
-                
-                   <> <div className="bottom-title" onClick={(e: React.MouseEvent<Element, MouseEvent>) => { handleClick(e, countryPosition, setCountryPosition) }}>{countryView ? `${countryView} >`  : null}</div>
-                    <Menu
-                      open={!!countryPosition}
-                      onClose={() => setCountryPosition(null)}
-                      anchorReference="anchorPosition"
-                      anchorPosition={countryPosition}
-                      elevation={0}
-                      classes={{ paper: 'menu-paper' }}
-                    >
+                                        </NestedMenuItem>
+                                        ))
+                                      }
 
-                        {factories.map((factoryName: any) => (
-                          <MenuItem onClick={(event: React.MouseEvent<Element, MouseEvent> | null) => handleItemClick(event, {country:`${countryView}`, factory: `${factoryName}`}, `root/${countryView}-Sum/${factoryName}`)}>{factoryName}</MenuItem>
-                        ))}
+                                    </NestedMenuItem>
+                                    ))
+                                  }
+                                  
+                              </NestedMenuItem>
+                        ))
+                      }
                     </Menu>
+                    <div className="bottom-title" onClick={(e: React.MouseEvent<Element, MouseEvent>) => { handleClick(e, countryView, setCountryView) }}>{countryView ? `${countryView} >`  : null}</div>
+                    <div className="bottom-title" onClick={(e: React.MouseEvent<Element, MouseEvent>) => { handleClick(e, factoryView, setFactoryView) }}>{factoryView ? `${factoryView} >`  : null}</div>
+                    <div className="bottom-title" onClick={(e: React.MouseEvent<Element, MouseEvent>) => { handleClick(e, levelView, setLevelView) }}>{levelView ? `${levelView} >`  : null}</div>
+                    <div className="cur-pointer"  onClick={(e: React.MouseEvent<Element, MouseEvent>) => { handleClick(e, currMenuView, setCurrMenuView) }}>{currMenuView}</div>
                     </>
-
-                  <> <div className="bottom-title" onClick={(e: React.MouseEvent<Element, MouseEvent>) => { handleClick(e, factoryPosition, setFactoryPosition) }}>{factoryView ? `${factoryView} >`  : null}</div>
-                    <Menu
-                      open={!!factoryPosition}
-                      onClose={() => setFactoryPosition(null)}
-                      anchorReference="anchorPosition"
-                      anchorPosition={factoryPosition}
-                      elevation={0}
-                      classes={{ paper: 'menu-paper' }}
-                    >
-                      
-                      {levels.map((levelName: any) => (
-                          <MenuItem onClick={(event: React.MouseEvent<Element, MouseEvent> | null) => handleItemClick(event, {country:`${countryView}`, factory: `${factoryView}`, level: `${levelName}`}, `root/${countryView}-Sum/${factoryView}/${levelName}-Summary`)}>{levelName}</MenuItem>
-                        ))}
-
-                    </Menu>
-                    </>
-
-                    
-                    <> <div className="bottom-title" onClick={(e: React.MouseEvent<Element, MouseEvent>) => { handleClick(e, levelPosition, setLevelPosition) }}>{levelView ? `${levelView} >`  : null}</div>
-                    <Menu
-                      open={!!levelPosition}
-                      onClose={() => setLevelPosition(null)}
-                      anchorReference="anchorPosition"
-                      anchorPosition={levelPosition}
-                      elevation={0}
-                      classes={{ paper: 'menu-paper' }}
-                    >
-                      <MenuItem onClick={(event: React.MouseEvent<Element, MouseEvent> | null) => handleItemClick(event, {country:`${countryView}`, factory: `${factoryView}`, level: `${levelView}`, currMenu: 'SERVER ROOM - SERVER'}, `root/${countryView}-Sum/${factoryView}/${levelView}/Server`)}>SERVER</MenuItem>
-                      <MenuItem onClick={(event: React.MouseEvent<Element, MouseEvent> | null) => handleItemClick(event, {country:`${countryView}`, factory: `${factoryView}`, level: `${levelView}`, currMenu: 'SERVER ROOM - RACK'}, `root/${countryView}-Sum/${factoryView}/${levelView}/Rack`)}>RACKS</MenuItem>
-                      <NestedMenuItem
-                        label="ROW"
-                        parentMenuOpen={!!levelPosition}
-                      >
-                        {rackData.map((data: any) => (
-                          <MenuItem onClick={(event: React.MouseEvent<Element, MouseEvent> | null) => handleItemClick(event, {country:`${countryView}`, factory: `${factoryView}`, level: `${levelView}`, currMenu: `SERVER ROOM - ROW ${data.val}`}, `root/${countryView}-Sum/${factoryView}/${levelView}/Row`, data.val)}>{data.val}</MenuItem>
-                        ))}
-                      </NestedMenuItem>
-
-
-                    </Menu>
-                    </>
-
-                   <>
-                   <div className="cur-pointer" onClick={(e: React.MouseEvent<Element, MouseEvent>) => { handleClick(e, CurrMenuView, setCurrMenuView) }}>{CurrMenuView}</div>
-                   </> 
-
                 </div>
               </>
             </Drawer>
